@@ -1,13 +1,23 @@
 from __future__ import annotations
-
-#from typing import Tuple, Literal
+from dataclasses import dataclass
+from typing import Literal
 from PIL import Image
 import numpy as np
 from numpy.typing import NDArray
 
-# Alias de tipos para claridad con Pylance estricto
+
+
+
+# Alias de tipos
 RGBImage = NDArray[np.uint8]
 IntKernel = NDArray[np.int32]
+FormatImage = Literal["PNG", "JPG"]
+
+@dataclass(frozen=True)
+class SaveImageProps:
+    pathImage: str
+    image: RGBImage
+    formatImage: FormatImage
 
 
 class ProcessImage():
@@ -18,6 +28,24 @@ class ProcessImage():
             pilImage = pilImage.convert("RGB")
             imageArray: RGBImage = np.array(pilImage, dtype=np.uint8)
         return imageArray
+    
+    def saveImage(self, options: SaveImageProps) -> None:
+        pathImage = options.pathImage
+        image = options.image
+        formatImage = options.formatImage
+        
+        print(f"Saving image to: {pathImage}")        
+        try:            
+            pilImage: Image.Image = Image.fromarray(image)
+            
+            if pilImage.mode != "RGB":
+                pilImage = pilImage.convert("RGB")
+            
+            pilImage.save(pathImage, format=formatImage)
+            print("Image saved successfully ✅")
+        except Exception as error:
+            print(f"Error saving image: {error}")
+
     
     def embossSequential(self, image: RGBImage) -> RGBImage:
         print("Applying Emboss filter sequentially")
@@ -35,7 +63,7 @@ class ProcessImage():
         )
         biasValue: int = 128
 
-        # Tipar explícitamente variables escalares ayuda a Pylance
+        
         imageHeight: int
         imageWidth: int
         imageChannels: int
@@ -48,7 +76,7 @@ class ProcessImage():
 
         embossedImage: RGBImage = np.zeros_like(image, dtype=np.uint8)
 
-        # Triple bucle "secuencial" claro (como pediste)
+        
         channelIndex: int
         rowIndex: int
         colIndex: int
