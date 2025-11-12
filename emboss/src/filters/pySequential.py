@@ -16,4 +16,8 @@ class Sequential(AplicationFilter):
     
 
     def aplyFilter(self):
-        print("Aplicando filtro secuencial...")
+        image = self.__processImage.readImage(self.__pathImage)
+        boss = self.__processImage.embossSequential(image)
+        print(boss)
+        
+    
