@@ -1,4 +1,4 @@
-from emboss.src.filters.pySequential import Sequential, SequentialProps
+from emboss.src.filters.Sequential import Sequential, SequentialProps
 from emboss.src.utils.processImage import ProcessImage
 
 
