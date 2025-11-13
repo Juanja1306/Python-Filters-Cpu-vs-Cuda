@@ -13,9 +13,9 @@ FormatImage = Literal["PNG", "JPG"]
 
 @dataclass(frozen=True)
 class SaveImageProps:
-    pathImage: str
-    image: RGBImage
-    formatImage: FormatImage
+    pathImage   : str
+    image       : RGBImage
+    formatImage : FormatImage
 
 
 class ProcessImage():
@@ -27,10 +27,12 @@ class ProcessImage():
             imageArray: RGBImage = np.array(pilImage, dtype=np.uint8)
         return imageArray
     
+    
+    
     def saveImage(self, options: SaveImageProps) -> None:
-        pathImage = options.pathImage
-        image = options.image
         formatImage = options.formatImage
+        pathImage   = options.pathImage
+        image       = options.image
         
         print(f"Saving image to: {pathImage}")        
         try:            

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import numpy as np
 
 # Modules
-from emboss.src.filters.abstracFilter import AplicationFilter
+from emboss.src.filters.domain.abstracFilter import AplicationFilter
 from emboss.src.utils.processImage import ProcessImage, SaveImageProps
 from emboss.src.types.index import RGBImage, IntKernel
 
@@ -12,8 +12,8 @@ from emboss.src.types.index import RGBImage, IntKernel
 
 @dataclass (frozen=True)
 class SequentialProps:
-    pathImage:str
-    processImage:ProcessImage
+    processImage :ProcessImage
+    pathImage    :str
 
 
 class Sequential(AplicationFilter):
@@ -24,13 +24,13 @@ class Sequential(AplicationFilter):
     
 
     def aplyFilter(self):
-        image = self.__processImage.readImage(self.__pathImage)
+        image     = self.__processImage.readImage(self.__pathImage)
         bossImage = self.__embossFilter(image)        
         
         self.__processImage.saveImage(SaveImageProps(
-            pathImage=self.__pathNewImage,
-            image=bossImage,
-            formatImage="PNG"
+            formatImage = "PNG",
+            pathImage   = self.__pathNewImage,
+            image       = bossImage
         ))        
         
         
