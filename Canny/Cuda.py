@@ -289,12 +289,14 @@ __global__ void limpiar_bordes_debiles(unsigned char *imagen, unsigned char *res
 """
 
 
-def aplicar_canny_cuda(imagen_grises):
+def aplicar_canny_cuda(imagen_grises, tamaño_kernel=5, sigma=1.4):
     """
     Aplica el filtro Canny completo usando CUDA.
     
     Args:
         imagen_grises: Imagen en escala de grises (numpy array)
+        tamaño_kernel: Tamaño del kernel gaussiano (debe ser impar)
+        sigma: Desviación estándar del filtro gaussiano
     
     Returns:
         numpy.ndarray: Imagen con bordes detectados
@@ -325,7 +327,7 @@ def aplicar_canny_cuda(imagen_grises):
     )
     
     print("  1) Generando kernel gaussiano...")
-    kernel_gauss = generar_kernel_gaussiano(5, 1.4)
+    kernel_gauss = generar_kernel_gaussiano(tamaño_kernel, sigma)
     tam_kernel = kernel_gauss.shape[0]
     
     # Transferir a GPU
@@ -464,48 +466,69 @@ def main():
         imagen_grises = convertir_a_grises(imagen_original)
         print("Conversión completada.")
         
-        # Ejecutar filtro Canny con CUDA
-        print("\n--- PROCESAMIENTO CON CUDA (GPU) ---")
-        print("Aplicando filtro Canny...")
+        # Tamaños de kernel a probar: 1%, 3% y 5%
+        porcentajes_kernel = [0.01, 0.03, 0.05]
+        tamaño_minimo = min(ancho, altura)
         
-        # Calentar GPU (primera ejecución)
-        print("\nCalentamiento de GPU...")
-        _ = aplicar_canny_cuda(imagen_grises)
+        # Procesar con cada tamaño de kernel
+        for idx, porcentaje_kernel in enumerate(porcentajes_kernel, 1):
+            print(f"\n{'='*70}")
+            print(f"PROCESAMIENTO {idx}/3 - KERNEL {int(porcentaje_kernel*100)}%")
+            print(f"{'='*70}")
+            
+            # Calcular tamaño del kernel
+            tamaño_kernel_float = tamaño_minimo * porcentaje_kernel
+            tamaño_kernel = int(tamaño_kernel_float)
+            if tamaño_kernel % 2 == 0:
+                tamaño_kernel += 1
+            if tamaño_kernel < 3:
+                tamaño_kernel = 3
+            
+            sigma = tamaño_kernel / 6.0
+            
+            print(f"\nKernel gaussiano: {tamaño_kernel}x{tamaño_kernel} (sigma={sigma:.2f})")
+            
+            # Ejecutar filtro Canny con CUDA
+            print("\n--- PROCESAMIENTO CON CUDA (GPU) ---")
+            print("Aplicando filtro Canny...")
+            
+            # Calentar GPU (primera ejecución)
+            print("\nCalentamiento de GPU...")
+            _ = aplicar_canny_cuda(imagen_grises, tamaño_kernel, sigma)
+            
+            # Ejecución medida
+            print("\nEjecución medida:")
+            tiempo_inicio = time.time()
+            imagen_bordes = aplicar_canny_cuda(imagen_grises, tamaño_kernel, sigma)
+            tiempo_fin = time.time()
+            
+            tiempo_ms = int((tiempo_fin - tiempo_inicio) * 1000)
+            print(f"\nTiempo de ejecución: {tiempo_ms} ms")
+            
+            # Guardar imagen con el porcentaje en el nombre
+            archivo_salida_kernel = os.path.join("Salida", f"canny_cuda_{int(porcentaje_kernel*100)}pct.jpg")
+            os.makedirs(os.path.dirname(archivo_salida_kernel), exist_ok=True)
+            cv2.imwrite(archivo_salida_kernel, imagen_bordes)
+            print(f"Imagen con bordes detectados guardada: {archivo_salida_kernel}")
+            
+            # Guardar resultados en CSV
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            os.makedirs(os.path.dirname(archivo_resultados), exist_ok=True)
+            
+            # Verificar si el archivo existe para decidir si escribir el header
+            archivo_existe = os.path.exists(archivo_resultados)
+            
+            with open(archivo_resultados, 'a', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                # Solo escribir header si el archivo no existe
+                if not archivo_existe:
+                    writer.writerow(['Timestamp', 'Kernel_Percent', 'Kernel_Size', 'Time_ms', 'Method'])
+                writer.writerow([timestamp, int(porcentaje_kernel*100), tamaño_kernel, tiempo_ms, 'CUDA'])
         
-        # Ejecución medida
-        print("\nEjecución medida:")
-        tiempo_inicio = time.time()
-        imagen_bordes = aplicar_canny_cuda(imagen_grises)
-        tiempo_fin = time.time()
-        
-        tiempo_ms = int((tiempo_fin - tiempo_inicio) * 1000)
-        print(f"\nTiempo de ejecución: {tiempo_ms} ms")
-        
-        # Guardar imagen
-        os.makedirs(os.path.dirname(archivo_salida), exist_ok=True)
-        cv2.imwrite(archivo_salida, imagen_bordes)
-        print(f"Imagen con bordes detectados guardada: {archivo_salida}")
-        
-        # Mostrar resumen de resultados
-        print("\n=== RESUMEN DE RENDIMIENTO ===")
-        print(f"Tiempo de ejecución: {tiempo_ms} ms")
-        print(f"Tiempo de ejecución: {tiempo_ms / 1000:.2f} segundos")
-        
-        # Guardar resultados en CSV
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        os.makedirs(os.path.dirname(archivo_resultados), exist_ok=True)
-        
-        # Verificar si el archivo existe para decidir si escribir el header
-        archivo_existe = os.path.exists(archivo_resultados)
-        
-        with open(archivo_resultados, 'a', newline='') as csvfile:
-            writer = csv.writer(csvfile)
-            # Solo escribir header si el archivo no existe
-            if not archivo_existe:
-                writer.writerow(['Timestamp', 'Time', 'Method'])
-            writer.writerow([timestamp, tiempo_ms, 'CUDA'])
-        
-        print(f"\nResultados guardados en: {archivo_resultados}")
+        print(f"\n{'='*70}")
+        print("=== RESUMEN COMPLETO ===")
+        print(f"Procesamiento completado con 3 tamaños de kernel: 1%, 3%, 5%")
+        print(f"Resultados guardados en: {archivo_resultados}")
         print("\n¡Proceso completado exitosamente!")
         
     except Exception as e:
