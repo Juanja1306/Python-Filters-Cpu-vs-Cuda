@@ -1,6 +1,10 @@
 # Dependencies
 from dataclasses import dataclass
 import numpy as np
+import time
+import psutil
+import os
+
 
 # Modules
 from emboss.src.filters.domain.abstracFilter import AplicationFilter
@@ -44,29 +48,25 @@ class Sequential(AplicationFilter):
         # Kernel de emboss direccional y bias para recentrar intensidades
         kernel: IntKernel = np.array(
             [[-2, -1, 0],
-             [-1,  1, 1],
-             [ 0,  1, 2]],
+            [-1,  1, 1],
+            [ 0,  1, 2]],
             dtype=np.int32,
         )
         biasValue: int = 128
 
-        
-        imageHeight  : int
-        imageWidth   : int
-        imageChannels: int
         imageHeight, imageWidth, imageChannels = image.shape
 
         # Padding por borde para mantener tamaño
         paddedImage: RGBImage = np.pad(
-            image, pad_width = ((1, 1), (1, 1), (0, 0)), mode="edge"
+            image, pad_width=((1, 1), (1, 1), (0, 0)), mode="edge"
         )
 
         embossedImage: RGBImage = np.zeros_like(image, dtype=np.uint8)
 
-        
-        channelIndex : int
-        rowIndex     : int
-        colIndex     : int
+        # Medir el tiempo y memoria antes de comenzar
+        start_time = time.time()  # Tiempo antes de empezar el filtro
+        process = psutil.Process(os.getpid())  # Obtener el proceso actual
+        start_memory = process.memory_info().rss / 1024 / 1024  # Memoria en MB antes de empezar
 
         for channelIndex in range(imageChannels):
             for rowIndex in range(imageHeight):
@@ -92,5 +92,16 @@ class Sequential(AplicationFilter):
 
                     embossedImage[rowIndex, colIndex, channelIndex] = np.uint8(clampedValue)
 
+        # Medir el tiempo y la memoria después de terminar
+        end_time = time.time()  # Tiempo después de aplicar el filtro
+        end_memory = process.memory_info().rss / 1024 / 1024  # Memoria en MB después de aplicar el filtro
+
+        # Calcular el tiempo de ejecución y la memoria utilizada
+        elapsed_time = end_time - start_time  # Tiempo en segundos
+        memory_used = end_memory - start_memory  # Memoria en MB utilizada
+
+        # Imprimir los resultados
+        print(f"Tiempo de ejecución: {elapsed_time:.4f} segundos")
+        print(f"Memoria utilizada: {memory_used:.4f} MB")
 
         return embossedImage
