@@ -144,7 +144,6 @@ def main():
     try:
         # Configuración (usar os.path.join para compatibilidad Windows/Linux)
         archivo_entrada = os.path.join("Images", "casa.jpg")
-        archivo_salida = os.path.join("Salida", "gaussiana_secuencial.jpg")
         archivo_resultados = os.path.join("Resultados", "gaussiana_secuencial.csv")
         
         print("=== FILTRO GAUSSIANO POR CONVOLUCIÓN (SECUENCIAL) ===")
@@ -168,73 +167,71 @@ def main():
         procesadores_disponibles = os.cpu_count()
         print(f"Procesadores disponibles: {procesadores_disponibles}")
         
-        # Configuración del kernel como porcentaje del tamaño de la imagen
-        porcentaje_kernel = 0.05  # 5% del tamaño de la imagen (puedes ajustar este valor)
-        tamaño_minimo = min(ancho, altura)
-        tamaño_kernel_float = tamaño_minimo * porcentaje_kernel
-        
-        # Asegurar que el tamaño del kernel sea impar (necesario para kernels gaussianos)
-        tamaño_kernel = int(tamaño_kernel_float)
-        if tamaño_kernel % 2 == 0:
-            tamaño_kernel += 1
-        
-        # Asegurar un tamaño mínimo razonable (al menos 3x3)
-        if tamaño_kernel < 3:
-            tamaño_kernel = 3
-            if tamaño_kernel % 2 == 0:
-                tamaño_kernel = 3
-        
-        sigma = tamaño_kernel / 6.0
-        
-        # Generar kernel gaussiano
-        print("\n--- GENERANDO KERNEL ---")
-        print(f"Porcentaje del tamaño de imagen: {porcentaje_kernel * 100:.2f}%")
-        print(f"Tamaño mínimo de imagen: {tamaño_minimo}")
-        print(f"Kernel gaussiano {tamaño_kernel}x{tamaño_kernel} (sigma={sigma:.2f})...")
-        kernel_gaussiano = generar_kernel_gaussiano(tamaño_kernel, sigma)
-        
-        # Convertir a escala de grises
+        # Convertir a escala de grises (solo una vez)
         print("\n--- CONVERSIÓN A ESCALA DE GRISES ---")
         imagen_grises = convertir_a_grises(imagen_original)
         print("Conversión completada.")
         
-        # Ejecutar convolución secuencial
-        print("\n--- PROCESAMIENTO SECUENCIAL ---")
-        print("Aplicando convolución gaussiana...")
+        # Tamaños de kernel a probar: 5%, 10% y 15%
+        porcentajes_kernel = [0.05, 0.10, 0.15]
+        tamaño_minimo = min(ancho, altura)
         
-        tiempo_inicio = time.time()
-        imagen_filtrada = aplicar_convolucion_secuencial(imagen_grises, kernel_gaussiano)
-        tiempo_fin = time.time()
+        # Procesar con cada tamaño de kernel
+        for idx, porcentaje_kernel in enumerate(porcentajes_kernel, 1):
+            print(f"\n{'='*60}")
+            print(f"PROCESAMIENTO {idx}/3 - KERNEL {int(porcentaje_kernel*100)}%")
+            print(f"{'='*60}")
+            
+            # Calcular tamaño del kernel
+            tamaño_kernel_float = tamaño_minimo * porcentaje_kernel
+            tamaño_kernel = int(tamaño_kernel_float)
+            if tamaño_kernel % 2 == 0:
+                tamaño_kernel += 1
+            
+            # Asegurar un tamaño mínimo razonable (al menos 3x3)
+            if tamaño_kernel < 3:
+                tamaño_kernel = 3
+            
+            sigma = tamaño_kernel / 6.0
+            
+            # Generar kernel gaussiano
+            print("\n--- GENERANDO KERNEL ---")
+            print(f"Porcentaje del tamaño de imagen: {porcentaje_kernel * 100:.2f}%")
+            print(f"Tamaño mínimo de imagen: {tamaño_minimo}")
+            print(f"Kernel gaussiano {tamaño_kernel}x{tamaño_kernel} (sigma={sigma:.2f})...")
+            kernel_gaussiano = generar_kernel_gaussiano(tamaño_kernel, sigma)
+            
+            # Ejecutar convolución secuencial
+            print("\n--- PROCESAMIENTO SECUENCIAL ---")
+            print("Aplicando convolución gaussiana...")
+            
+            tiempo_inicio = time.time()
+            imagen_filtrada = aplicar_convolucion_secuencial(imagen_grises, kernel_gaussiano)
+            tiempo_fin = time.time()
+            
+            tiempo_ms = int((tiempo_fin - tiempo_inicio) * 1000)
+            print(f"Tiempo de ejecución: {tiempo_ms} ms ({tiempo_ms / 1000:.2f} segundos)")
+            
+            # Guardar la imagen procesada
+            archivo_salida = os.path.join("Salida", f"gaussiana_secuencial_{int(porcentaje_kernel*100)}pct.jpg")
+            cv2.imwrite(archivo_salida, imagen_filtrada)
+            print(f"Imagen filtrada guardada: {archivo_salida}")
+            
+            # Guardar resultados en archivo CSV
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            archivo_existe = os.path.exists(archivo_resultados)
+            
+            with open(archivo_resultados, 'a', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                if not archivo_existe:
+                    writer.writerow(['Timestamp', 'Kernel_Percent', 'Kernel_Size', 'Time_ms', 'Method'])
+                    archivo_existe = True
+                writer.writerow([timestamp, int(porcentaje_kernel*100), tamaño_kernel, tiempo_ms, 'Secuencial'])
         
-        tiempo_ms = int((tiempo_fin - tiempo_inicio) * 1000)
-        print(f"Tiempo de ejecución: {tiempo_ms} ms")
-        
-        # Guardar la imagen procesada
-        cv2.imwrite(archivo_salida, imagen_filtrada)
-        print(f"Imagen filtrada guardada: {archivo_salida}")
-        
-        # Mostrar resumen de resultados
-        print("\n=== RESUMEN DE RENDIMIENTO ===")
-        print(f"Tiempo de ejecución: {tiempo_ms} ms")
-        print(f"Tiempo de ejecución: {tiempo_ms / 1000:.2f} segundos")
-        
-        # Guardar resultados en archivo CSV
-        # Timestamp debe estar en formato ISO 8601
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
-        # Verificar si el archivo existe
-        archivo_existe = os.path.exists(archivo_resultados)
-        
-        # Si existe, agregar fila; si no, crear con headers
-        with open(archivo_resultados, 'a', newline='') as csvfile:
-            writer = csv.writer(csvfile)
-            # Solo escribir header si el archivo no existe
-            if not archivo_existe:
-                writer.writerow(['Timestamp', 'Time', 'Method'])
-            # Para versión secuencial, solo hay una ejecución
-            writer.writerow([timestamp, tiempo_ms, 'Secuencial'])
-        
-        print(f"\nResultados guardados en: {archivo_resultados}")
+        print(f"\n{'='*60}")
+        print("=== RESUMEN COMPLETO ===")
+        print(f"Procesamiento completado con 3 tamaños de kernel: 5%, 10%, 15%")
+        print(f"Resultados guardados en: {archivo_resultados}")
         print("\n¡Proceso completado exitosamente!")
         
     except Exception as e:
