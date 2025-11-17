@@ -51,44 +51,46 @@ class Sequential(AplicationFilter):
         biasValue: int = 128
 
         
-        imageHeight: int
-        imageWidth: int
+        imageHeight  : int
+        imageWidth   : int
         imageChannels: int
         imageHeight, imageWidth, imageChannels = image.shape
 
         # Padding por borde para mantener tamaño
         paddedImage: RGBImage = np.pad(
-            image, pad_width=((1, 1), (1, 1), (0, 0)), mode="edge"
+            image, pad_width = ((1, 1), (1, 1), (0, 0)), mode="edge"
         )
 
         embossedImage: RGBImage = np.zeros_like(image, dtype=np.uint8)
 
         
-        channelIndex: int
-        rowIndex: int
-        colIndex: int
+        channelIndex : int
+        rowIndex     : int
+        colIndex     : int
 
         for channelIndex in range(imageChannels):
             for rowIndex in range(imageHeight):
                 for colIndex in range(imageWidth):
-                    neighborhood: RGBImage = paddedImage[
-                        rowIndex:rowIndex + 3, colIndex:colIndex + 3, channelIndex
+                    # Obtener el vecindario de la imagen alrededor del píxel actual
+                    neighborhood = [
+                        [paddedImage[rowIndex + i, colIndex + j, channelIndex] 
+                        for j in range(3)] 
+                        for i in range(3)
                     ]
 
-                    # Convertimos a int32 para evitar overflow al multiplicar por el kernel
-                    convolutionSum: int = int(
-                        np.sum(neighborhood.astype(np.int32) * kernel)
-                    )
-                    valueWithBias: int = convolutionSum + biasValue
+                    # Realizar la convolución (producto punto) sin usar numpy
+                    convolutionSum = 0
+                    for i in range(3):
+                        for j in range(3):
+                            convolutionSum += neighborhood[i][j] * kernel[i, j]
 
-                    # Clamp manual para Pylance (evita quejas por tipos)
-                    if valueWithBias < 0:
-                        clampedValue: int = 0
-                    elif valueWithBias > 255:
-                        clampedValue = 255
-                    else:
-                        clampedValue = valueWithBias
+                    # Aplicar el sesgo (bias) y ajustar el valor
+                    valueWithBias = convolutionSum + biasValue
+
+                    # Clamp manual para asegurar que el valor esté entre 0 y 255
+                    clampedValue = max(0, min(255, valueWithBias))
 
                     embossedImage[rowIndex, colIndex, channelIndex] = np.uint8(clampedValue)
+
 
         return embossedImage

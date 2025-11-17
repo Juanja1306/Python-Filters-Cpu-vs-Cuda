@@ -28,6 +28,9 @@ class ProcessImage():
         return imageArray
     
     
+    def getImageParamters(self, image: RGBImage):
+        height, width, channels = image.shape
+        return height, width, channels
     
     def saveImage(self, options: SaveImageProps) -> None:
         formatImage = options.formatImage

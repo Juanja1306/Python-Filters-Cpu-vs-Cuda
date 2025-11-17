@@ -1,8 +1,6 @@
-
 from emboss.src.emboss import Emboss, EmbossProps
 from emboss.src.filters.Cuda import CudaEmboss, CudaProps
 from emboss.src.filters.Sequential import Sequential, SequentialProps
-from emboss.src.filters.Threads import ThreadsEmboss, ThreardsProps
 from emboss.src.utils.processImage import ProcessImage
 
 
@@ -16,14 +14,6 @@ sequential = Sequential(SequentialProps (
     processImage = processImage
 ))
 
-
-# Threads Service
-threads = ThreadsEmboss(ThreardsProps(
-    pathImage    = pathImage,
-    processImage = processImage
-))
-
-
 # Cuda Service
 cuda = CudaEmboss(CudaProps(
     pathImage    = pathImage,
@@ -33,9 +23,9 @@ cuda = CudaEmboss(CudaProps(
 
 # Embos
 embossFilter = Emboss(EmbossProps(
-    # serviceEmboss = sequential
+    serviceEmboss = sequential
     # serviceEmboss = threads
-    serviceEmboss = cuda
+    #serviceEmboss = cuda
 ))
 
 embossFilter.aplyFilter()
