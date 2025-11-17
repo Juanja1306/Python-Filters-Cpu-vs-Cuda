@@ -103,8 +103,8 @@ def main():
     try:
         # Configuración
         archivo_entrada = r"Images\casa.jpg"
-        archivo_salida = r"Gaussian\Salida\gaussiana_secuencial.jpg"
-        archivo_resultados = r"Gaussian\Resultados\gaussiana_secuencial.csv"
+        archivo_salida = r"Salida\gaussiana_secuencial.jpg"
+        archivo_resultados = r"Resultados\gaussiana_secuencial.csv"
         
         print("=== FILTRO GAUSSIANO POR CONVOLUCIÓN (SECUENCIAL) ===")
         print(f"Leyendo imagen: {archivo_entrada}")
