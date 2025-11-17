@@ -258,9 +258,9 @@ def main():
             writer = csv.writer(csvfile)
             # Si el archivo no existe, escribir headers
             if not archivo_existe:
-                writer.writerow(['Timestamp', 'Time'])
+                writer.writerow(['Timestamp', 'Time', 'Method'])
             # Agregar la nueva fila de datos
-            writer.writerow([timestamp, tiempo_ms])
+            writer.writerow([timestamp, tiempo_ms, 'CUDA'])
         
         print(f"\nResultados guardados en: {archivo_resultados}")
         print("\n¡Proceso completado exitosamente!")
