@@ -40,19 +40,23 @@ def make_odd(k: int) -> int:
 
 
 def auto_masks(width: int, height: int):
-    """Genera automáticamente 3 máscaras según la resolución."""
-    print("[INFO] Calculando tamaños de máscara dinámicos...")
+    """
+    Cálculo optimizado de máscaras basado en resolución.
+    Más estable, más científico y evita tamaños exagerados.
+    """
+    print("[INFO] Calculando tamaños de máscara dinámicos (optimización A)...")
+
     short = min(width, height)
 
-    k_small = max(3, short // 200)
-    k_medium = max(5, short // 80)
-    k_large = max(7, short // 40)
+    # proporciones más estables
+    k_small  = make_odd(max(3, int(short * 0.003)))
+    k_medium = make_odd(max(5, int(short * 0.01)))
+    k_large  = make_odd(max(7, int(short * 0.025)))
 
-    ks = sorted(set([make_odd(k_small), make_odd(k_medium), make_odd(k_large)]))
+    ks = sorted(set([k_small, k_medium, k_large]))
 
-    print(f"[OK] Máscaras generadas: {ks}")
+    print(f"[OK] Máscaras optimizadas generadas: {ks}")
     return ks
-
 
 # ======================================
 #  FILTRO NEGATIVO OPTIMIZADO DEL CPU
