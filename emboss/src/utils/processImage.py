@@ -29,8 +29,15 @@ class ProcessImage():
     
     
     def getImageParamters(self, image: RGBImage):
-        height, width, channels = image.shape
-        return height, width, channels
+        height, width, channels = image.shape       
+        parameters = {
+            'height'  : height,
+            'width'   : width,
+            'channels': channels
+        }        
+        
+        print(f"Image parameters: Height={height}, Width={width}, Channels={channels}")        
+        return parameters
     
     def saveImage(self, options: SaveImageProps) -> None:
         formatImage = options.formatImage
