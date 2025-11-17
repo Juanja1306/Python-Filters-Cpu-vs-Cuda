@@ -3,6 +3,33 @@ import cv2
 import time
 import csv
 import os
+from datetime import datetime
+
+
+def exp_manual(x):
+    """
+    Calcula e^x manualmente usando la serie de Taylor.
+    e^x = 1 + x + x²/2! + x³/3! + x⁴/4! + ...
+    
+    Args:
+        x: Exponente
+    
+    Returns:
+        float: e^x
+    """
+    resultado = 1.0
+    termino = 1.0
+    
+    # Usar suficientes términos para buena precisión
+    for n in range(1, 50):
+        termino *= x / n
+        resultado += termino
+        
+        # Si el término es muy pequeño, podemos parar
+        if abs(termino) < 1e-15:
+            break
+    
+    return resultado
 
 
 def generar_kernel_gaussiano(tamaño, sigma):
@@ -24,11 +51,20 @@ def generar_kernel_gaussiano(tamaño, sigma):
         for x in range(tamaño):
             dx = x - centro
             dy = y - centro
-            valor = np.exp(-(dx*dx + dy*dy) / (2.0 * sigma * sigma))
+            valor = exp_manual(-(dx*dx + dy*dy) / (2.0 * sigma * sigma))
             kernel[y, x] = valor
     
     # Normalizar el kernel para que la suma sea 1
-    kernel /= np.sum(kernel)
+    # Calcular la suma total manualmente
+    suma_total = 0.0
+    for y in range(tamaño):
+        for x in range(tamaño):
+            suma_total += kernel[y, x]
+    
+    # Dividir cada elemento por la suma total
+    for y in range(tamaño):
+        for x in range(tamaño):
+            kernel[y, x] /= suma_total
     
     return kernel
 
@@ -94,7 +130,12 @@ def aplicar_convolucion_secuencial(imagen, kernel):
                     suma += imagen[py, px] * kernel[ky, kx]
             
             # Asegurar que el valor esté en el rango válido [0, 255]
-            resultado[y, x] = np.clip(suma, 0, 255)
+            if suma < 0:
+                resultado[y, x] = 0
+            elif suma > 255:
+                resultado[y, x] = 255
+            else:
+                resultado[y, x] = suma
     
     return resultado.astype(np.uint8)
 
