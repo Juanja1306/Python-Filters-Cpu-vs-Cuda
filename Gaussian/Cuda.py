@@ -285,13 +285,13 @@ def main():
         # Timestamp debe estar en formato ISO 8601
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        # Verificar si el archivo existe
+        # Verificar si el archivo existe para decidir si escribir el header
         archivo_existe = os.path.exists(archivo_resultados)
         
         # Si existe, agregar fila; si no, crear con headers
-        with open(archivo_resultados, 'a' if archivo_existe else 'w', newline='') as csvfile:
+        with open(archivo_resultados, 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
-            # Si el archivo no existe, escribir headers
+            # Solo escribir header si el archivo no existe
             if not archivo_existe:
                 writer.writerow(['Timestamp', 'Time', 'Method'])
             # Agregar la nueva fila de datos

@@ -226,9 +226,11 @@ def main():
         archivo_existe = os.path.exists(archivo_resultados)
         
         # Si existe, agregar fila; si no, crear con headers
-        with open(archivo_resultados, 'w', newline='') as csvfile:
+        with open(archivo_resultados, 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(['Timestamp', 'Time', 'Method'])
+            # Solo escribir header si el archivo no existe
+            if not archivo_existe:
+                writer.writerow(['Timestamp', 'Time', 'Method'])
             # Para versión secuencial, solo hay una ejecución
             writer.writerow([timestamp, tiempo_ms, 'Secuencial'])
         

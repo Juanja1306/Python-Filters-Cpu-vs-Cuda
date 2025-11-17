@@ -348,9 +348,14 @@ def main():
             resultados_csv.append([num_procesos, tiempos[i], speedup, eficiencia_porcentaje])
         
         # Guardar resultados en archivo CSV
-        with open(archivo_resultados, 'w', newline='') as csvfile:
+        # Verificar si el archivo existe para decidir si escribir el header
+        archivo_existe = os.path.exists(archivo_resultados)
+        
+        with open(archivo_resultados, 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(['procesos', 'tiempo_ms', 'speedup', 'eficiencia'])
+            # Solo escribir header si el archivo no existe
+            if not archivo_existe:
+                writer.writerow(['procesos', 'tiempo_ms', 'speedup', 'eficiencia'])
             for row in resultados_csv:
                 writer.writerow([row[0], row[1], f"{row[2]:.2f}", f"{row[3]:.2f}"])
         
