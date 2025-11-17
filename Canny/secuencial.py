@@ -364,18 +364,20 @@ def umbralizacion_histeresis_secuencial(magnitud, umbral_alto, umbral_bajo):
     return resultado
 
 
-def aplicar_canny_secuencial(imagen_grises):
+def aplicar_canny_secuencial(imagen_grises, tamaño_kernel=5, sigma=1.4):
     """
     Filtro Canny completo (SECUENCIAL).
     
     Args:
         imagen_grises: Imagen en escala de grises (lista de listas)
+        tamaño_kernel: Tamaño del kernel gaussiano
+        sigma: Desviación estándar del kernel gaussiano
     
     Returns:
         list: Imagen con bordes detectados
     """
-    print("  1) Generando kernel gaussiano...")
-    kernel_gaussiano = generar_kernel_gaussiano(5, 1.4)
+    print(f"  1) Generando kernel gaussiano {tamaño_kernel}x{tamaño_kernel}...")
+    kernel_gaussiano = generar_kernel_gaussiano(tamaño_kernel, sigma)
     
     print("  2) Aplicando suavizado gaussiano...")
     suavizada = aplicar_suavizado_gaussiano(imagen_grises, kernel_gaussiano)
@@ -407,7 +409,6 @@ def main():
     try:
         # Configuración
         archivo_entrada = os.path.join("Images", "casa.jpg")
-        archivo_salida = os.path.join("Salida", "canny_secuencial.jpg")
         archivo_resultados = os.path.join("Resultados", "canny_secuencial.csv")
         
         print("=== FILTRO CANNY DE DETECCIÓN DE BORDES (SECUENCIAL) ===")
@@ -427,58 +428,70 @@ def main():
         altura, ancho = imagen_original.shape[:2]
         print(f"Dimensiones: {ancho}x{altura}")
         
-        # Obtener número de procesadores disponibles
-        procesadores_disponibles = os.cpu_count()
-        print(f"Procesadores disponibles: {procesadores_disponibles}")
-        
-        # Convertir a escala de grises
+        # Convertir a escala de grises (solo una vez)
         print("\n--- CONVERSIÓN A ESCALA DE GRISES ---")
         imagen_grises = convertir_a_grises(imagen_original)
         print("Conversión completada.")
         
-        # Ejecutar filtro Canny secuencial
-        print("\n--- PROCESAMIENTO SECUENCIAL ---")
-        print("Aplicando filtro Canny...")
-        print("Pasos: Suavizado → Gradientes → Supresión → Histéresis")
+        # Tamaños de kernel a probar: 1%, 3% y 5%
+        porcentajes_kernel = [0.01, 0.03, 0.05]
+        tamaño_minimo = min(ancho, altura)
         
-        tiempo_inicio = time.time()
-        imagen_bordes = aplicar_canny_secuencial(imagen_grises)
-        tiempo_fin = time.time()
-        
-        tiempo_ms = int((tiempo_fin - tiempo_inicio) * 1000)
-        print(f"\nTiempo de ejecución: {tiempo_ms} ms")
-        
-        # Convertir resultado a formato numpy para guardar con OpenCV
         import numpy as np
-        resultado_np = np.array(imagen_bordes, dtype=np.uint8)
         
-        # Crear directorio de salida si no existe
-        os.makedirs(os.path.dirname(archivo_salida), exist_ok=True)
-        cv2.imwrite(archivo_salida, resultado_np)
-        print(f"Imagen con bordes detectados guardada: {archivo_salida}")
+        # Procesar con cada tamaño de kernel
+        for idx, porcentaje_kernel in enumerate(porcentajes_kernel, 1):
+            print(f"\n{'='*60}")
+            print(f"PROCESAMIENTO {idx}/3 - KERNEL {int(porcentaje_kernel*100)}%")
+            print(f"{'='*60}")
+            
+            # Calcular tamaño del kernel
+            tamaño_kernel_float = tamaño_minimo * porcentaje_kernel
+            tamaño_kernel = int(tamaño_kernel_float)
+            if tamaño_kernel % 2 == 0:
+                tamaño_kernel += 1
+            if tamaño_kernel < 3:
+                tamaño_kernel = 3
+            
+            sigma = tamaño_kernel / 6.0
+            
+            # Ejecutar filtro Canny secuencial
+            print("\n--- PROCESAMIENTO SECUENCIAL ---")
+            print("Aplicando filtro Canny...")
+            print("Pasos: Suavizado → Gradientes → Supresión → Histéresis")
+            
+            tiempo_inicio = time.time()
+            imagen_bordes = aplicar_canny_secuencial(imagen_grises, tamaño_kernel, sigma)
+            tiempo_fin = time.time()
+            
+            tiempo_ms = int((tiempo_fin - tiempo_inicio) * 1000)
+            print(f"\nTiempo de ejecución: {tiempo_ms} ms ({tiempo_ms / 1000:.2f} segundos)")
+            
+            # Convertir resultado a formato numpy para guardar con OpenCV
+            resultado_np = np.array(imagen_bordes, dtype=np.uint8)
+            
+            # Crear directorio de salida si no existe
+            archivo_salida = os.path.join("Salida", f"canny_secuencial_{int(porcentaje_kernel*100)}pct.jpg")
+            os.makedirs(os.path.dirname(archivo_salida), exist_ok=True)
+            cv2.imwrite(archivo_salida, resultado_np)
+            print(f"Imagen con bordes detectados guardada: {archivo_salida}")
+            
+            # Guardar resultados en archivo CSV
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            os.makedirs(os.path.dirname(archivo_resultados), exist_ok=True)
+            archivo_existe = os.path.exists(archivo_resultados)
+            
+            with open(archivo_resultados, 'a', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                if not archivo_existe:
+                    writer.writerow(['Timestamp', 'Kernel_Percent', 'Kernel_Size', 'Time_ms', 'Method'])
+                    archivo_existe = True
+                writer.writerow([timestamp, int(porcentaje_kernel*100), tamaño_kernel, tiempo_ms, 'Secuencial'])
         
-        # Mostrar resumen de resultados
-        print("\n=== RESUMEN DE RENDIMIENTO ===")
-        print(f"Tiempo de ejecución: {tiempo_ms} ms")
-        print(f"Tiempo de ejecución: {tiempo_ms / 1000:.2f} segundos")
-        
-        # Guardar resultados en archivo CSV
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
-        # Crear directorio de resultados si no existe
-        os.makedirs(os.path.dirname(archivo_resultados), exist_ok=True)
-        
-        # Verificar si el archivo existe para decidir si escribir el header
-        archivo_existe = os.path.exists(archivo_resultados)
-        
-        with open(archivo_resultados, 'a', newline='') as csvfile:
-            writer = csv.writer(csvfile)
-            # Solo escribir header si el archivo no existe
-            if not archivo_existe:
-                writer.writerow(['Timestamp', 'Time', 'Method'])
-            writer.writerow([timestamp, tiempo_ms, 'Secuencial'])
-        
-        print(f"\nResultados guardados en: {archivo_resultados}")
+        print(f"\n{'='*60}")
+        print("=== RESUMEN COMPLETO ===")
+        print(f"Procesamiento completado con 3 tamaños de kernel: 1%, 3%, 5%")
+        print(f"Resultados guardados en: {archivo_resultados}")
         print("\n¡Proceso completado exitosamente!")
         
     except Exception as e:
