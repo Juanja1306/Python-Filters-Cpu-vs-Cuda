@@ -166,10 +166,10 @@ def aplicar_convolucion_cuda(imagen, kernel):
 
 def main():
     try:
-        # Configuración
-        archivo_entrada = r"Images\casa.jpg"
-        archivo_salida = r"Salida\gaussiana_cuda.jpg"
-        archivo_resultados = r"Resultados\gaussiana_cuda.csv"
+        # Configuración (usar os.path.join para compatibilidad Windows/Linux)
+        archivo_entrada = os.path.join("Images", "casa.jpg")
+        archivo_salida = os.path.join("Salida", "gaussiana_cuda.jpg")
+        archivo_resultados = os.path.join("Resultados", "gaussiana_cuda.csv")
         
         print("=== FILTRO GAUSSIANO POR CONVOLUCIÓN (CUDA) ===")
         print(f"Leyendo imagen: {archivo_entrada}")

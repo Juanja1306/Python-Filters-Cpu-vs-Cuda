@@ -101,10 +101,10 @@ def aplicar_convolucion_secuencial(imagen, kernel):
 
 def main():
     try:
-        # Configuración
-        archivo_entrada = r"Images\casa.jpg"
-        archivo_salida = r"Salida\gaussiana_secuencial.jpg"
-        archivo_resultados = r"Resultados\gaussiana_secuencial.csv"
+        # Configuración (usar os.path.join para compatibilidad Windows/Linux)
+        archivo_entrada = os.path.join("Images", "casa.jpg")
+        archivo_salida = os.path.join("Salida", "gaussiana_secuencial.jpg")
+        archivo_resultados = os.path.join("Resultados", "gaussiana_secuencial.csv")
         
         print("=== FILTRO GAUSSIANO POR CONVOLUCIÓN (SECUENCIAL) ===")
         print(f"Leyendo imagen: {archivo_entrada}")
