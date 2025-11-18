@@ -32,23 +32,23 @@ def exp_manual(x):
     return resultado
 
 
-def generar_kernel_gaussiano(tamaño, sigma):
+def generar_kernel_gaussiano(tamanio, sigma):
     """
     Genera un kernel gaussiano manualmente.
     
     Args:
-        tamaño: Tamaño del kernel (debe ser impar)
+        tamanio: tamanio del kernel (debe ser impar)
         sigma: Desviación estándar del filtro gaussiano
     
     Returns:
         numpy.ndarray: Kernel gaussiano normalizado
     """
-    kernel = np.zeros((tamaño, tamaño), dtype=np.float64)
-    centro = tamaño // 2
+    kernel = np.zeros((tamanio, tamanio), dtype=np.float64)
+    centro = tamanio // 2
     
     # Fórmula gaussiana: G(x,y) = (1/(2πσ²)) * e^(-(x²+y²)/(2σ²))
-    for y in range(tamaño):
-        for x in range(tamaño):
+    for y in range(tamanio):
+        for x in range(tamanio):
             dx = x - centro
             dy = y - centro
             valor = exp_manual(-(dx*dx + dy*dy) / (2.0 * sigma * sigma))
@@ -57,13 +57,13 @@ def generar_kernel_gaussiano(tamaño, sigma):
     # Normalizar el kernel para que la suma sea 1
     # Calcular la suma total manualmente
     suma_total = 0.0
-    for y in range(tamaño):
-        for x in range(tamaño):
+    for y in range(tamanio):
+        for x in range(tamanio):
             suma_total += kernel[y, x]
     
     # Dividir cada elemento por la suma total
-    for y in range(tamaño):
-        for x in range(tamaño):
+    for y in range(tamanio):
+        for x in range(tamanio):
             kernel[y, x] /= suma_total
     
     return kernel
@@ -172,34 +172,34 @@ def main():
         imagen_grises = convertir_a_grises(imagen_original)
         print("Conversión completada.")
         
-        # Tamaños de kernel a probar: 5%, 10% y 15%
+        # tamanios de kernel a probar: 5%, 10% y 15%
         porcentajes_kernel = [0.05, 0.10, 0.15]
-        tamaño_minimo = min(ancho, altura)
+        tamanio_minimo = min(ancho, altura)
         
-        # Procesar con cada tamaño de kernel
+        # Procesar con cada tamanio de kernel
         for idx, porcentaje_kernel in enumerate(porcentajes_kernel, 1):
             print(f"\n{'='*60}")
             print(f"PROCESAMIENTO {idx}/3 - KERNEL {int(porcentaje_kernel*100)}%")
             print(f"{'='*60}")
             
-            # Calcular tamaño del kernel
-            tamaño_kernel_float = tamaño_minimo * porcentaje_kernel
-            tamaño_kernel = int(tamaño_kernel_float)
-            if tamaño_kernel % 2 == 0:
-                tamaño_kernel += 1
+            # Calcular tamanio del kernel
+            tamanio_kernel_float = tamanio_minimo * porcentaje_kernel
+            tamanio_kernel = int(tamanio_kernel_float)
+            if tamanio_kernel % 2 == 0:
+                tamanio_kernel += 1
             
-            # Asegurar un tamaño mínimo razonable (al menos 3x3)
-            if tamaño_kernel < 3:
-                tamaño_kernel = 3
+            # Asegurar un tamanio mínimo razonable (al menos 3x3)
+            if tamanio_kernel < 3:
+                tamanio_kernel = 3
             
-            sigma = tamaño_kernel / 6.0
+            sigma = tamanio_kernel / 6.0
             
             # Generar kernel gaussiano
             print("\n--- GENERANDO KERNEL ---")
-            print(f"Porcentaje del tamaño de imagen: {porcentaje_kernel * 100:.2f}%")
-            print(f"Tamaño mínimo de imagen: {tamaño_minimo}")
-            print(f"Kernel gaussiano {tamaño_kernel}x{tamaño_kernel} (sigma={sigma:.2f})...")
-            kernel_gaussiano = generar_kernel_gaussiano(tamaño_kernel, sigma)
+            print(f"Porcentaje del tamanio de imagen: {porcentaje_kernel * 100:.2f}%")
+            print(f"tamanio mínimo de imagen: {tamanio_minimo}")
+            print(f"Kernel gaussiano {tamanio_kernel}x{tamanio_kernel} (sigma={sigma:.2f})...")
+            kernel_gaussiano = generar_kernel_gaussiano(tamanio_kernel, sigma)
             
             # Ejecutar convolución secuencial
             print("\n--- PROCESAMIENTO SECUENCIAL ---")
@@ -226,11 +226,11 @@ def main():
                 if not archivo_existe:
                     writer.writerow(['Timestamp', 'Kernel_Percent', 'Kernel_Size', 'Time_ms', 'Method'])
                     archivo_existe = True
-                writer.writerow([timestamp, int(porcentaje_kernel*100), tamaño_kernel, tiempo_ms, 'Secuencial'])
+                writer.writerow([timestamp, int(porcentaje_kernel*100), tamanio_kernel, tiempo_ms, 'Secuencial'])
         
         print(f"\n{'='*60}")
         print("=== RESUMEN COMPLETO ===")
-        print(f"Procesamiento completado con 3 tamaños de kernel: 5%, 10%, 15%")
+        print(f"Procesamiento completado con 3 tamanios de kernel: 5%, 10%, 15%")
         print(f"Resultados guardados en: {archivo_resultados}")
         print("\n¡Proceso completado exitosamente!")
         
