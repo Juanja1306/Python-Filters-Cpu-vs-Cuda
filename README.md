@@ -15,7 +15,7 @@ Python-Filters-Cpu-vs-Cuda/
 │   └── requirements.txt   # Dependencias Python
 │
 ├── emboss/                # Filtro Emboss (Relieve)
-│   ├── assets/            # Versión secuencial (1 core CPU)
+│   ├── assets/            # Imagenes
 │   └── src/
 │       ├── filters/       # Implementaciones CPU y CUDA
 │       ├── utils/         # Utilidades de imagen y CUDA
