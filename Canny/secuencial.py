@@ -105,24 +105,24 @@ def atan2_manual(y, x):
             return -3.14159265359 / 2.0 - atan
 
 
-def generar_kernel_gaussiano(tamaño, sigma):
+def generar_kernel_gaussiano(tamanio, sigma):
     """
     Genera un kernel gaussiano manualmente.
     
     Args:
-        tamaño: Tamaño del kernel (debe ser impar)
+        tamanio: tamanio del kernel (debe ser impar)
         sigma: Desviación estándar del filtro gaussiano
     
     Returns:
         list: Kernel gaussiano normalizado (lista de listas)
     """
-    kernel = [[0.0 for _ in range(tamaño)] for _ in range(tamaño)]
-    centro = tamaño // 2
+    kernel = [[0.0 for _ in range(tamanio)] for _ in range(tamanio)]
+    centro = tamanio // 2
     
     # Fórmula gaussiana: G(x,y) = (1/(2πσ²)) * e^(-(x²+y²)/(2σ²))
     suma_total = 0.0
-    for y in range(tamaño):
-        for x in range(tamaño):
+    for y in range(tamanio):
+        for x in range(tamanio):
             dx = x - centro
             dy = y - centro
             valor = exp_manual(-(dx*dx + dy*dy) / (2.0 * sigma * sigma))
@@ -130,8 +130,8 @@ def generar_kernel_gaussiano(tamaño, sigma):
             suma_total += valor
     
     # Normalizar el kernel para que la suma sea 1
-    for y in range(tamaño):
-        for x in range(tamaño):
+    for y in range(tamanio):
+        for x in range(tamanio):
             kernel[y][x] /= suma_total
     
     return kernel
@@ -364,20 +364,20 @@ def umbralizacion_histeresis_secuencial(magnitud, umbral_alto, umbral_bajo):
     return resultado
 
 
-def aplicar_canny_secuencial(imagen_grises, tamaño_kernel=5, sigma=1.4):
+def aplicar_canny_secuencial(imagen_grises, tamanio_kernel=5, sigma=1.4):
     """
     Filtro Canny completo (SECUENCIAL).
     
     Args:
         imagen_grises: Imagen en escala de grises (lista de listas)
-        tamaño_kernel: Tamaño del kernel gaussiano
+        tamanio_kernel: tamanio del kernel gaussiano
         sigma: Desviación estándar del kernel gaussiano
     
     Returns:
         list: Imagen con bordes detectados
     """
-    print(f"  1) Generando kernel gaussiano {tamaño_kernel}x{tamaño_kernel}...")
-    kernel_gaussiano = generar_kernel_gaussiano(tamaño_kernel, sigma)
+    print(f"  1) Generando kernel gaussiano {tamanio_kernel}x{tamanio_kernel}...")
+    kernel_gaussiano = generar_kernel_gaussiano(tamanio_kernel, sigma)
     
     print("  2) Aplicando suavizado gaussiano...")
     suavizada = aplicar_suavizado_gaussiano(imagen_grises, kernel_gaussiano)
@@ -433,27 +433,27 @@ def main():
         imagen_grises = convertir_a_grises(imagen_original)
         print("Conversión completada.")
         
-        # Tamaños de kernel a probar: 1%, 3% y 5%
+        # tamanios de kernel a probar: 1%, 3% y 5%
         porcentajes_kernel = [0.01, 0.03, 0.05]
-        tamaño_minimo = min(ancho, altura)
+        tamanio_minimo = min(ancho, altura)
         
         import numpy as np
         
-        # Procesar con cada tamaño de kernel
+        # Procesar con cada tamanio de kernel
         for idx, porcentaje_kernel in enumerate(porcentajes_kernel, 1):
             print(f"\n{'='*60}")
             print(f"PROCESAMIENTO {idx}/3 - KERNEL {int(porcentaje_kernel*100)}%")
             print(f"{'='*60}")
             
-            # Calcular tamaño del kernel
-            tamaño_kernel_float = tamaño_minimo * porcentaje_kernel
-            tamaño_kernel = int(tamaño_kernel_float)
-            if tamaño_kernel % 2 == 0:
-                tamaño_kernel += 1
-            if tamaño_kernel < 3:
-                tamaño_kernel = 3
+            # Calcular tamanio del kernel
+            tamanio_kernel_float = tamanio_minimo * porcentaje_kernel
+            tamanio_kernel = int(tamanio_kernel_float)
+            if tamanio_kernel % 2 == 0:
+                tamanio_kernel += 1
+            if tamanio_kernel < 3:
+                tamanio_kernel = 3
             
-            sigma = tamaño_kernel / 6.0
+            sigma = tamanio_kernel / 6.0
             
             # Ejecutar filtro Canny secuencial
             print("\n--- PROCESAMIENTO SECUENCIAL ---")
@@ -461,7 +461,7 @@ def main():
             print("Pasos: Suavizado → Gradientes → Supresión → Histéresis")
             
             tiempo_inicio = time.time()
-            imagen_bordes = aplicar_canny_secuencial(imagen_grises, tamaño_kernel, sigma)
+            imagen_bordes = aplicar_canny_secuencial(imagen_grises, tamanio_kernel, sigma)
             tiempo_fin = time.time()
             
             tiempo_ms = int((tiempo_fin - tiempo_inicio) * 1000)
@@ -486,11 +486,11 @@ def main():
                 if not archivo_existe:
                     writer.writerow(['Timestamp', 'Kernel_Percent', 'Kernel_Size', 'Time_ms', 'Method'])
                     archivo_existe = True
-                writer.writerow([timestamp, int(porcentaje_kernel*100), tamaño_kernel, tiempo_ms, 'Secuencial'])
+                writer.writerow([timestamp, int(porcentaje_kernel*100), tamanio_kernel, tiempo_ms, 'Secuencial'])
         
         print(f"\n{'='*60}")
         print("=== RESUMEN COMPLETO ===")
-        print(f"Procesamiento completado con 3 tamaños de kernel: 1%, 3%, 5%")
+        print(f"Procesamiento completado con 3 tamanios de kernel: 1%, 3%, 5%")
         print(f"Resultados guardados en: {archivo_resultados}")
         print("\n¡Proceso completado exitosamente!")
         
