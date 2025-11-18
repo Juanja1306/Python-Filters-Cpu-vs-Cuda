@@ -192,6 +192,7 @@ cd Canny
 python Cuda.py
 ```
 
+--- 
 ### **Filtro Emboss**
 
 Para ejecutar el archivo ``main_emboss``
@@ -339,6 +340,7 @@ def atan2_manual(y, x):
 - [NVIDIA CUDA Programming Guide](https://docs.nvidia.com/cuda/)
 - [Canny Edge Detection (Wikipedia)](https://en.wikipedia.org/wiki/Canny_edge_detector)
 - [Gaussian Blur (Wikipedia)](https://en.wikipedia.org/wiki/Gaussian_blur)
+- [Emboss (Wikipedia)](https://en.wikipedia.org/wiki/Image_embossing)
 - [Negative Filter (Wikipedia)](https://es.wikipedia.org/wiki/Negativo_fotogr%C3%A1fico)
 ---
 
