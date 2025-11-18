@@ -9,16 +9,23 @@ Comparación de rendimiento entre implementaciones secuenciales (CPU) y CUDA (GP
 ```
 Python-Filters-Cpu-vs-Cuda/
 ├── Gaussian/              # Filtro Gaussiano (Suavizado)
-│   ├── secuencial.py     # Versión secuencial (1 core CPU)
-│   ├── Cuda.py           # Versión GPU con CUDA
-│   ├── Images/           # Imágenes de entrada
-│   └── requirements.txt  # Dependencias Python
+│   ├── secuencial.py      # Versión secuencial (1 core CPU)
+│   ├── Cuda.py            # Versión GPU con CUDA
+│   ├── Images/            # Imágenes de entrada
+│   └── requirements.txt   # Dependencias Python
+│
+├── emboss/                # Filtro Emboss (Relieve)
+│   ├── assets/            # Versión secuencial (1 core CPU)
+│   └── src/
+│       ├── filters/       # Implementaciones CPU y CUDA
+│       ├── utils/         # Utilidades de imagen y CUDA
+│       └── main_emboss.py # Punto de entrada
 │
 └── Canny/                 # Filtro Canny (Detección de bordes)
-    ├── secuencial.py     # Versión secuencial (1 core CPU)
-    ├── Cuda.py           # Versión GPU con CUDA
-    ├── Images/           # Imágenes de entrada
-    └── requirements.txt  # Dependencias Python
+    ├── secuencial.py      # Versión secuencial (1 core CPU)
+    ├── Cuda.py            # Versión GPU con CUDA
+    ├── Images/            # Imágenes de entrada
+    └── requirements.txt   # Dependencias Python
 ```
 
 ---
@@ -58,7 +65,20 @@ Detección de bordes mediante el algoritmo Canny completo.
 
 ---
 
-## 🛠️ Características Técnicas
+### 3. **Filtro Emboss (Relieve)** �
+
+Crea un efecto de relieve o grabado en la imagen, simulando una fuente de luz.
+
+**Versiones:**
+- `Sequential.py` - Ejecución en CPU (1 core)
+- `Cuda.py` - Ejecución en GPU con PyCUDA
+
+**Kernels probados:**
+- Tamaño de kernel dinámico (3x3, 5x5, 7x7, 9x9) basado en las dimensiones de la imagen.
+
+---
+
+## �🛠️ Características Técnicas
 
 ### ✅ **Implementación Manual**
 - **Sin numpy** para operaciones matemáticas críticas
@@ -105,6 +125,7 @@ pip install -r requirements.txt
 - `numpy>=1.26.0` - Arrays y operaciones numéricas
 - `opencv-python-headless>=4.8.0` - Lectura/escritura de imágenes
 - `pycuda>=2024.1` - Interfaz Python-CUDA (solo versiones GPU)
+- `psutil` - Medición de uso de memoria (para filtro Emboss)
 
 ---
 
@@ -162,6 +183,17 @@ python -m emboss.src.main_emboss
 3. Generación de kernel gaussiano (manual)
 4. Convolución 2D (píxel por píxel)
 5. Repetir para 3 tamaños de kernel diferentes
+
+### **Emboss - Proceso**
+1. Lectura de la imagen de entrada.
+2. Selección dinámica del tamaño del kernel (3x3, 5x5, 7x7 o 9x9) según las dimensiones de la imagen.
+3. Generación del kernel de relieve correspondiente.
+4. Aplicación de la convolución 2D:
+    - **CPU**: Bucle anidado sobre cada píxel y canal de la imagen.
+    - **GPU**: Kernel CUDA optimizado para procesar la imagen en paralelo.
+5. Adición de un valor de sesgo (bias) de 128 para ajustar el brillo final.
+6. Guardado de la imagen con el efecto de relieve.
+
 
 ### **Canny - Proceso**
 1. Lectura de imagen desde `Images/casa.jpg`
