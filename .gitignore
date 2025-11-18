@@ -3,3 +3,4 @@ venv/
 Resultados/
 Salida/
 __cache__
+*.csv
