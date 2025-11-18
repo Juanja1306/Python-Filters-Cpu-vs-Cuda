@@ -41,20 +41,22 @@ def exp_manual(x):
 
 def generar_kernel_gaussiano(tamaño, sigma):
     """Genera un kernel gaussiano manualmente."""
-    kernel = np.zeros((tamaño, tamaño), dtype=np.float32)
-    centro = tamaño // 2
+    kernel = np.zeros((tamanio, tamanio), dtype=np.float32)
+    centro = tamanio // 2
     
     suma_total = 0.0
     for y in range(tamaño):
         for x in range(tamaño):
+    for y in range(tamanio):
+        for x in range(tamanio):
             dx = x - centro
             dy = y - centro
             valor = exp_manual(-(dx*dx + dy*dy) / (2.0 * sigma * sigma))
             kernel[y, x] = valor
             suma_total += valor
     
-    for y in range(tamaño):
-        for x in range(tamaño):
+    for y in range(tamanio):
+        for x in range(tamanio):
             kernel[y, x] /= suma_total
     
     return kernel
@@ -151,7 +153,7 @@ __global__ void calcular_gradientes(float *imagen, float *magnitud, float *direc
 """
 
 # Kernel para supresión no-máxima
-kernel_supresion = """
+kernel_supresion = r"""
 #define PI 3.14159265359f
 
 __global__ void supresion_no_maxima(float *magnitud, float *direccion, float *resultado,
@@ -190,7 +192,7 @@ __global__ void supresion_no_maxima(float *magnitud, float *direccion, float *re
         mag1 = magnitud[(y-1) * ancho + x];
         mag2 = magnitud[(y+1) * ancho + x];
     } else {
-        // 135 grados (diagonal \)
+        // 135 grados (diagonal backslash)
         mag1 = magnitud[(y-1) * ancho + (x-1)];
         mag2 = magnitud[(y+1) * ancho + (x+1)];
     }
@@ -289,13 +291,13 @@ __global__ void limpiar_bordes_debiles(unsigned char *imagen, unsigned char *res
 """
 
 
-def aplicar_canny_cuda(imagen_grises, tamaño_kernel=5, sigma=1.4):
+def aplicar_canny_cuda(imagen_grises, tamanio_kernel=5, sigma=1.4):
     """
     Aplica el filtro Canny completo usando CUDA.
     
     Args:
         imagen_grises: Imagen en escala de grises (numpy array)
-        tamaño_kernel: Tamaño del kernel gaussiano (debe ser impar)
+        tamanio_kernel: tamanio del kernel gaussiano (debe ser impar)
         sigma: Desviación estándar del filtro gaussiano
     
     Returns:
@@ -327,7 +329,7 @@ def aplicar_canny_cuda(imagen_grises, tamaño_kernel=5, sigma=1.4):
     )
     
     print("  1) Generando kernel gaussiano...")
-    kernel_gauss = generar_kernel_gaussiano(tamaño_kernel, sigma)
+    kernel_gauss = generar_kernel_gaussiano(tamanio_kernel, sigma)
     tam_kernel = kernel_gauss.shape[0]
     
     # Transferir a GPU
@@ -466,27 +468,27 @@ def main():
         imagen_grises = convertir_a_grises(imagen_original)
         print("Conversión completada.")
         
-        # Tamaños de kernel a probar: 1%, 3% y 5%
+        # tamanios de kernel a probar: 1%, 3% y 5%
         porcentajes_kernel = [0.01, 0.03, 0.05]
-        tamaño_minimo = min(ancho, altura)
+        tamanio_minimo = min(ancho, altura)
         
-        # Procesar con cada tamaño de kernel
+        # Procesar con cada tamanio de kernel
         for idx, porcentaje_kernel in enumerate(porcentajes_kernel, 1):
             print(f"\n{'='*70}")
             print(f"PROCESAMIENTO {idx}/3 - KERNEL {int(porcentaje_kernel*100)}%")
             print(f"{'='*70}")
             
-            # Calcular tamaño del kernel
-            tamaño_kernel_float = tamaño_minimo * porcentaje_kernel
-            tamaño_kernel = int(tamaño_kernel_float)
-            if tamaño_kernel % 2 == 0:
-                tamaño_kernel += 1
-            if tamaño_kernel < 3:
-                tamaño_kernel = 3
+            # Calcular tamanio del kernel
+            tamanio_kernel_float = tamanio_minimo * porcentaje_kernel
+            tamanio_kernel = int(tamanio_kernel_float)
+            if tamanio_kernel % 2 == 0:
+                tamanio_kernel += 1
+            if tamanio_kernel < 3:
+                tamanio_kernel = 3
             
-            sigma = tamaño_kernel / 6.0
+            sigma = tamanio_kernel / 6.0
             
-            print(f"\nKernel gaussiano: {tamaño_kernel}x{tamaño_kernel} (sigma={sigma:.2f})")
+            print(f"\nKernel gaussiano: {tamanio_kernel}x{tamanio_kernel} (sigma={sigma:.2f})")
             
             # Ejecutar filtro Canny con CUDA
             print("\n--- PROCESAMIENTO CON CUDA (GPU) ---")
@@ -494,12 +496,12 @@ def main():
             
             # Calentar GPU (primera ejecución)
             print("\nCalentamiento de GPU...")
-            _ = aplicar_canny_cuda(imagen_grises, tamaño_kernel, sigma)
+            _ = aplicar_canny_cuda(imagen_grises, tamanio_kernel, sigma)
             
             # Ejecución medida
             print("\nEjecución medida:")
             tiempo_inicio = time.time()
-            imagen_bordes = aplicar_canny_cuda(imagen_grises, tamaño_kernel, sigma)
+            imagen_bordes = aplicar_canny_cuda(imagen_grises, tamanio_kernel, sigma)
             tiempo_fin = time.time()
             
             tiempo_ms = int((tiempo_fin - tiempo_inicio) * 1000)
@@ -523,11 +525,11 @@ def main():
                 # Solo escribir header si el archivo no existe
                 if not archivo_existe:
                     writer.writerow(['Timestamp', 'Kernel_Percent', 'Kernel_Size', 'Time_ms', 'Method'])
-                writer.writerow([timestamp, int(porcentaje_kernel*100), tamaño_kernel, tiempo_ms, 'CUDA'])
+                writer.writerow([timestamp, int(porcentaje_kernel*100), tamanio_kernel, tiempo_ms, 'CUDA'])
         
         print(f"\n{'='*70}")
         print("=== RESUMEN COMPLETO ===")
-        print(f"Procesamiento completado con 3 tamaños de kernel: 1%, 3%, 5%")
+        print(f"Procesamiento completado con 3 tamanios de kernel: 1%, 3%, 5%")
         print(f"Resultados guardados en: {archivo_resultados}")
         print("\n¡Proceso completado exitosamente!")
         
