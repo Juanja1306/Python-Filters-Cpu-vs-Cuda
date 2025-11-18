@@ -5,7 +5,7 @@ from emboss.src.utils.processImage import ProcessImage
 
 
 processImage = ProcessImage()
-pathImage    = "C:/Users/Jonna/Desktop/ups/8ctavo ciclo/paralelo/practica_2/Python-Filters-Cpu-vs-Cuda/emboss/assets/gato.jpg"
+pathImage    = "C:/Users/Jonna/Desktop/ups/8ctavo ciclo/paralelo/practica_2/Python-Filters-Cpu-vs-Cuda/emboss/assets/casa.jpg"
 
 
 # Sequential Service
