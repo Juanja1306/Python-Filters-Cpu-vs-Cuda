@@ -29,11 +29,17 @@ Python-Filters-Cpu-vs-Cuda/
 │       │   └── processImage.py         # Clase para procesar la imagen, como lectura, obtencion de parametros, y guardado
 │       └── main_emboss.py              # Punto de entrada
 │
-└── Canny/                 # Filtro Canny (Detección de bordes)
-    ├── secuencial.py      # Versión secuencial (1 core CPU)
-    ├── Cuda.py            # Versión GPU con CUDA
-    ├── Images/            # Imágenes de entrada
-    └── requirements.txt   # Dependencias Python
+├── Canny/                 # Filtro Canny (Detección de bordes)
+|   ├── secuencial.py      # Versión secuencial (1 core CPU)
+|   ├── Cuda.py            # Versión GPU con CUDA
+|   ├── Images/            # Imágenes de entrada
+|   └── requirements.txt   # Dependencias Python
+|
+├── Negative/    	       # Filtro Negativo (Inversión de Color)
+|   ├── negative_cpu.py    # Versión secuencial 
+|   ├── negative_c=gpu.py  # Versión GPU con CUDA
+|   ├── Image.png          # Imágen de entrada
+|   └── requirements.txt   # Dependencias Python
 ```
 
 ---
@@ -73,7 +79,7 @@ Detección de bordes mediante el algoritmo Canny completo.
 
 ---
 
-### 3. **Filtro Emboss (Relieve)** �
+### 3. **Filtro Emboss (Relieve)** 
 
 Crea un efecto de relieve o grabado en la imagen, simulando una fuente de luz.
 
@@ -84,6 +90,19 @@ Crea un efecto de relieve o grabado en la imagen, simulando una fuente de luz.
 **Kernels probados:**
 - Tamaño de kernel dinámico (3x3, 5x5, 7x7, 9x9) basado en las dimensiones de la imagen.
 
+---
+### 4. Filtro Negativo 🎨
+
+Inversión de colores mediante la operación puntual `255 - pixel` aplicada a cada canal RGB.
+
+**Versiones:**
+
+- `negative_cpu.py` – Ejecución en CPU 
+- `negative_gpu.py` – Ejecución en GPU con PyCUDA
+
+**Kernels probados:**
+
+- Este filtro no requiere kernels de convolución.
 ---
 
 ## �🛠️ Características Técnicas
@@ -126,6 +145,10 @@ pip install -r requirements.txt
 
 # Instalar dependencias para Canny
 cd Canny
+pip install -r requirements.txt
+
+# Instalar dependencias para Negative
+cd Negative
 pip install -r requirements.txt
 ```
 
@@ -183,6 +206,21 @@ python -m emboss.src.main_emboss
 > Actualizar el servicio que se desea aplicar, ya sea secuencial o cuda en el ``main_emboss.py``
 ---
 
+### **Filtro Negative**
+
+#### Versión Secuencial (CPU):
+```bash
+cd Negative
+python negative_cpu.py
+```
+
+#### Versión CUDA (GPU):
+```bash
+cd Negative
+python negative_gpu.py
+````
+---
+
 ## 🔬 Detalles de Implementación
 
 ### **Gaussiano - Proceso**
@@ -212,6 +250,12 @@ python -m emboss.src.main_emboss
 6. Umbralización doble (clasificación de píxeles)
 7. Histéresis (conexión de bordes fuertes y débiles)
 8. Repetir para 3 tamaños de kernel diferentes
+
+### **Negativo – Proceso**
+1. Lectura de imagen 
+2. Procesamiento píxel por píxel mediante la operación puntual `255 - valor`
+3. Aplicación del negativo a cada canal (R, G, B) de manera secuencial en CPU o paralela en GPU
+4. Generación y guardado de la imagen resultante (`neg_cpu.png` o `neg_gpu.png`)
 
 ---
 
@@ -295,7 +339,7 @@ def atan2_manual(y, x):
 - [NVIDIA CUDA Programming Guide](https://docs.nvidia.com/cuda/)
 - [Canny Edge Detection (Wikipedia)](https://en.wikipedia.org/wiki/Canny_edge_detector)
 - [Gaussian Blur (Wikipedia)](https://en.wikipedia.org/wiki/Gaussian_blur)
-
+- [Negative Filter (Wikipedia)](https://es.wikipedia.org/wiki/Negativo_fotogr%C3%A1fico)
 ---
 
 ## 👨‍💻 Uso Académico
