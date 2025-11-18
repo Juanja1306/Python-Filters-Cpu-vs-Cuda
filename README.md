@@ -140,6 +140,18 @@ cd Canny
 python Cuda.py
 ```
 
+### **Filtro Emboss**
+
+Para ejecutar el archivo ``main_emboss``
+
+
+```bash
+python -m emboss.src.main_emboss
+```
+
+>  **Nota:**  
+> Actualizar la ruta de la imagen a la que se desea aplicar el filtro
+> Actualizar el servicio que se desea aplicar, ya sea secuencial o cuda en el ``main_emboss.py``
 ---
 
 ## 🔬 Detalles de Implementación
