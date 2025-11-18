@@ -3,3 +3,6 @@ venv/
 Resultados/
 Salida/
 __pycache__
+
+*.csv
+
