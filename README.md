@@ -14,12 +14,20 @@ Python-Filters-Cpu-vs-Cuda/
 │   ├── Images/            # Imágenes de entrada
 │   └── requirements.txt   # Dependencias Python
 │
-├── emboss/                # Filtro Emboss (Relieve)
-│   ├── assets/            # Imagenes
-│   └── src/
-│       ├── filters/       # Implementaciones CPU y CUDA
-│       ├── utils/         # Utilidades de imagen y CUDA
-│       └── main_emboss.py # Punto de entrada
+├── emboss/                             # Filtro Emboss (Relieve)
+│   ├── assets/                         # Imagenes
+│   └── src/    
+│       ├── filters/                    # Implementaciones CPU y CUDA
+│       │   ├── domain/                 # Reglas (abstracs)
+│       │   │    └── abstracFilter.py   # Define las reglas que deben acatarse los filters
+│       │   │
+│       │   ├── Cuda.py                 # Implementación del filtro Embos con PyCuda
+│       │   └── Sequential.py           # Implementación del filtro Embos de forma secuencial
+│       │   
+│       ├── utils/                      # Utilidades de imagen y CUDA
+│       │   ├── cudaUtils.py            # Funciones de utilidad para la implementación en GPU con PyCUDA
+│       │   └── processImage.py         # Clase para procesar la imagen, como lectura, obtencion de parametros, y guardado
+│       └── main_emboss.py              # Punto de entrada
 │
 └── Canny/                 # Filtro Canny (Detección de bordes)
     ├── secuencial.py      # Versión secuencial (1 core CPU)

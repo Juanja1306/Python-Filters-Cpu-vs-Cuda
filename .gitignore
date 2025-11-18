@@ -2,5 +2,7 @@
 venv/
 Resultados/
 Salida/
-__cache__
+__pycache__
+
 *.csv
+
