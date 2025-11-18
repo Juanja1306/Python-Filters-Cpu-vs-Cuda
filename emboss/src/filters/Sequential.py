@@ -49,7 +49,7 @@ class Sequential(AplicationFilter):
         ))        
         
         
-    def __embossFilter(self, image: RGBImage, embossParams:EmbossParams) -> RGBImage:
+    def __embossFilter(self, image: RGBImage, embossParams: EmbossParams) -> RGBImage:
         print("Applying Emboss filter sequentially")
 
         # Validación mínima del shape esperado (H, W, 3)
@@ -64,7 +64,6 @@ class Sequential(AplicationFilter):
         imageHeight   = embossParams.height
         imageWidth    = embossParams.width
 
-
         # Padding por borde para mantener tamaño
         paddedImage: RGBImage = np.pad(
             image, pad_width=((1, 1), (1, 1), (0, 0)), mode="edge"
@@ -73,25 +72,29 @@ class Sequential(AplicationFilter):
         embossedImage: RGBImage = np.zeros_like(image, dtype=np.uint8)
 
         # Medir el tiempo y memoria antes de comenzar
-        start_time = time.time()  # Tiempo antes de empezar el filtro
-        process = psutil.Process(os.getpid())  # Obtener el proceso actual
-        start_memory = process.memory_info().rss / 1024 / 1024  # Memoria en MB antes de empezar
+        start_time   = time.time() 
+        process      = psutil.Process(os.getpid())
+        start_memory = process.memory_info().rss / 1024 / 1024
 
+        # Iteración sobre los canales, filas y columnas de la imagen
         for channelIndex in range(imageChannels):
             for rowIndex in range(imageHeight):
                 for colIndex in range(imageWidth):
+                    # Asegurarse de que no nos salgamos de los límites
                     # Obtener el vecindario de la imagen alrededor del píxel actual
                     neighborhood = [
                         [paddedImage[rowIndex + i, colIndex + j, channelIndex] 
-                        for j in range(kernel.shape[1])]  # Cambiar de 3 a kernel.shape[1]
-                        for i in range(kernel.shape[0])  # Cambiar de 3 a kernel.shape[0]
+                        for j in range(len(kernel[0])) if (colIndex + j) < paddedImage.shape[1]]  # Asegurar que no excedamos el límite de la columna
+                        for i in range(len(kernel)) if (rowIndex + i) < paddedImage.shape[0]  # Asegurar que no excedamos el límite de la fila
                     ]
 
                     # Realizar la convolución (producto punto) sin usar numpy
                     convolutionSum = 0
-                    for i in range(kernel.shape[0]):  # Iterar sobre las filas del kernel
-                        for j in range(kernel.shape[1]):  # Iterar sobre las columnas del kernel
-                            convolutionSum += neighborhood[i][j] * kernel[i, j]
+                    for i in range(len(kernel)):  # Iterar sobre las filas del kernel
+                        for j in range(len(kernel[0])):  # Iterar sobre las columnas del kernel
+                            # Verificar si el vecindario tiene el tamaño correcto
+                            if 0 <= rowIndex + i < paddedImage.shape[0] and 0 <= colIndex + j < paddedImage.shape[1]:
+                                convolutionSum += neighborhood[i][j] * kernel[i][j]
 
                     # Aplicar el sesgo (bias) y ajustar el valor
                     valueWithBias = convolutionSum + biasValue
@@ -100,20 +103,21 @@ class Sequential(AplicationFilter):
                     clampedValue = max(0, min(255, valueWithBias))
 
                     embossedImage[rowIndex, colIndex, channelIndex] = np.uint8(clampedValue)
-
+        
         # Medir el tiempo y la memoria después de terminar
-        end_time = time.time()  # Tiempo después de aplicar el filtro
-        end_memory = process.memory_info().rss / 1024 / 1024  # Memoria en MB después de aplicar el filtro
+        end_time   = time.time()
+        end_memory = process.memory_info().rss / 1024 / 1024
 
         # Calcular el tiempo de ejecución y la memoria utilizada
-        elapsed_time = end_time - start_time  # Tiempo en segundos
-        memory_used = end_memory - start_memory  # Memoria en MB utilizada
+        elapsed_time = end_time - start_time  
+        memory_used  = end_memory - start_memory
 
         # Imprimir los resultados
         print(f"Tiempo de ejecución: {elapsed_time:.4f} segundos")
         print(f"Memoria utilizada: {memory_used:.4f} MB")
-        
+            
         return embossedImage
+
     
     
     def __createEmbossKernel(self, imageParams: dict[str, int]) -> EmbossParams:
@@ -125,12 +129,14 @@ class Sequential(AplicationFilter):
 
         # Ajustar el tamaño del kernel según las dimensiones de la imagen
        # Ajustar el tamaño del kernel según las dimensiones de la imagen
-        if height > 4000 and width > 4000:
+        if height > 5000 and width > 7000:
             kernel_size = 9  # Para imágenes muy grandes (más de 4000x4000)
-        elif height > 1000 and width > 1000:
+        elif height > 3000 and width > 3000:
             kernel_size = 7  # Para imágenes grandes (más de 1000x1000)
-        else:
+        elif height > 1000 and width > 1000:
             kernel_size = 5  # Para imágenes medianas (menos de 1000x1000)
+        else:
+            kernel_size = 3  # Para imágenes pequeñas (menos de 1000x1000)
         
         if kernel_size == 9:
             kernel = np.array(
@@ -160,7 +166,7 @@ class Sequential(AplicationFilter):
                 ],
                 dtype=np.int32
             )
-        else:  # Kernel de tamaño 5x5 para imágenes más pequeñas
+        elif kernel_size == 5:  # Kernel de tamaño 5x5 para imágenes más pequeñas
             kernel = np.array(
                 [
                     [ -2, -1,  0,  1,   2 ],
@@ -169,6 +175,13 @@ class Sequential(AplicationFilter):
                     [  1,  1,  1,  1,  -1 ],
                     [  2,  1,  0, -1,  -2 ]
                 ],
+                dtype=np.int32
+            )
+        else:
+            kernel = np.array(
+                [[-2, -1, 0],
+                 [-1,  1, 1],
+                 [ 0,  1, 2]],
                 dtype=np.int32
             )
 
@@ -184,5 +197,8 @@ class Sequential(AplicationFilter):
             height    = height,
             width     = width
         )
+        
+        print(f'Kernel size: {kernel_size}, bias: {biasValue}')
+        print(f'Kernel: \n{kernel}')
         
         return embossParams

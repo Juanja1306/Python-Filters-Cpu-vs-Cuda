@@ -3,10 +3,8 @@ from dataclasses import dataclass
 
 # Modules
 from emboss.src.filters.domain.abstracFilter import AplicationFilter
-from emboss.src.utils.processImage import ProcessImage#, SaveImageProps
+from emboss.src.utils.processImage import ProcessImage #, SaveImageProps
 from emboss.src.types.index import RGBImage
-
-
 
 
 @dataclass (frozen=True)
