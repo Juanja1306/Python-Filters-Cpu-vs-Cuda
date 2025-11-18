@@ -2,4 +2,4 @@
 venv/
 Resultados/
 Salida/
-__cache__
+__pycache__
