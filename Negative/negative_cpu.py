@@ -11,7 +11,7 @@ from PIL import Image
 # ================================
 #  CONFIGURACIÓN BÁSICA
 # ================================
-IMG_PATH = "image.jpg"
+IMG_PATH = "Image.jpg"
 CSV_PATH = "resultados.csv"
 OPERATION_NAME = "negative-filter"
 RUN_TYPE = "CPU"
@@ -21,7 +21,7 @@ RUN_TYPE = "CPU"
 #  UTILIDADES
 # ================================
 def load_image_pil(path: str) -> np.ndarray:
-    """Carga imagen con PIL, la convierte a RGB y retorna ndarray uint8."""
+    """Carga imagen como RGB uint8."""
     print(f"[INFO] Cargando imagen: {path}")
     img = Image.open(path).convert("RGB")
     print(f"[OK] Imagen cargada: {img.size[0]}x{img.size[1]}")
@@ -34,64 +34,39 @@ def save_image_pil(arr: np.ndarray, path: str) -> None:
     print(f"[OK] Resultado guardado: {path}")
 
 
-def make_odd(k: int) -> int:
-    """Asegura que k sea impar."""
-    return k if k % 2 == 1 else k + 1
-
-
-def auto_masks(width: int, height: int):
+# ================================
+#  FILTRO NEGATIVO (PYTHON PURO)
+# ================================
+def negative_cpu_pure(img: np.ndarray) -> np.ndarray:
     """
-    Cálculo optimizado de máscaras basado en resolución.
-    Más estable, más científico y evita tamaños exagerados.
-    """
-    print("[INFO] Calculando tamaños de máscara dinámicos (optimización A)...")
-
-    short = min(width, height)
-
-    # proporciones más estables
-    k_small  = make_odd(max(3, int(short * 0.003)))
-    k_medium = make_odd(max(5, int(short * 0.01)))
-    k_large  = make_odd(max(7, int(short * 0.025)))
-
-    ks = sorted(set([k_small, k_medium, k_large]))
-
-    print(f"[OK] Máscaras optimizadas generadas: {ks}")
-    return ks
-
-# ======================================
-#  FILTRO NEGATIVO OPTIMIZADO DEL CPU
-# ======================================
-def negative_cpu_with_window(img: np.ndarray, k: int) -> np.ndarray:
-    """
-    Filtro negativo optimizado:
+    Implementación completamente manual del negativo:
+    - Sin NumPy para operar
     - Secuencial
-    - O(k²) real usando slicing
+    - Python puro
     """
-    h, w, _ = img.shape
-    r = k // 2
-    out = np.empty_like(img)
+    print("[INFO] Ejecutando filtro negativo (Python puro)...")
 
-    print(f"[INFO] Ejecutando filtro negativo con máscara {k}x{k} ...")
+    h, w, ch = img.shape
+
+    # Convertir imagen a lista para operación en Python puro
+    img_list = img.tolist()
+    out_list = []
 
     for y in range(h):
-
-        y0 = max(0, y - r)
-        y1 = min(h, y + r + 1)
-
         if y % 500 == 0:
-            print(f"    > Progreso fila: {y}/{h}")
-
+            print(f"    > Progreso fila {y}/{h}")
+        row_out = []
         for x in range(w):
+            r, g, b = img_list[y][x]
+            nr = 255 - r
+            ng = 255 - g
+            nb = 255 - b
+            row_out.append([nr, ng, nb])
+        out_list.append(row_out)
 
-            x0 = max(0, x - r)
-            x1 = min(w, x + r + 1)
-
-            ventana = img[y0:y1, x0:x1, 0]
-            dummy = ventana.sum()  # Simulación del costo
-
-            out[y, x] = 255 - img[y, x]
-
-    print(f"[OK] Filtro {k}x{k} completado.")
+    # Convertimos a NumPy solo al final
+    out = np.array(out_list, dtype=np.uint8)
+    print("[OK] Filtro negativo completado.")
     return out
 
 
@@ -134,17 +109,15 @@ CSV_HEADER = [
 
 def ensure_csv_with_header(csv_path: str):
     if not os.path.exists(csv_path):
-        with open(csv_path, mode="w", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            writer.writerow(CSV_HEADER)
+        with open(csv_path, "w", newline="", encoding="utf-8") as f:
+            csv.writer(f).writerow(CSV_HEADER)
         print(f"[OK] Archivo CSV creado: {csv_path}")
 
 
 def append_csv_row(csv_path: str, row: dict):
     ensure_csv_with_header(csv_path)
-    with open(csv_path, mode="a", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow([row.get(col, "") for col in CSV_HEADER])
+    with open(csv_path, "a", newline="", encoding="utf-8") as f:
+        csv.writer(f).writerow([row.get(col, "") for col in CSV_HEADER])
     print(f"[OK] Métricas guardadas en CSV ({csv_path})")
 
 
@@ -163,71 +136,70 @@ def main():
     total_pixels = w * h
     image_bytes = img.nbytes
 
-    masks = auto_masks(w, h)
+    # Versión pura → solo una ejecución
+    mask_size = 1  # valor simbólico para compatibilidad con CSV
 
     device_name_cpu = platform.processor() or platform.uname().processor or "Unknown CPU"
-    device_name_gpu = ""
+    device_name_gpu = ""  # vacío en CPU
 
     proc = psutil.Process()
 
-    for k in masks:
+    print("\n========== Procesando NEGATIVO PURO ==========\n")
 
-        print(f"\n========== Procesando máscara {k}x{k} ==========\n")
+    ram_before = proc.memory_info().rss / (1024 * 1024)
+    t_total_start = time.perf_counter()
 
-        ram_before = proc.memory_info().rss / (1024 * 1024)
-        t_total_start = time.perf_counter()
+    t_proc_start = time.perf_counter()
+    out = negative_cpu_pure(img)
+    t_proc_end = time.perf_counter()
 
-        t_proc_start = time.perf_counter()
-        out = negative_cpu_with_window(img, k)
-        t_proc_end = time.perf_counter()
+    output_path = "neg_cpu.png"
+    save_image_pil(out, output_path)
 
-        output_path = f"neg_cpu_k{k}.png"
-        save_image_pil(out, output_path)
+    t_total_end = time.perf_counter()
+    ram_after = proc.memory_info().rss / (1024 * 1024)
 
-        t_total_end = time.perf_counter()
-        ram_after = proc.memory_info().rss / (1024 * 1024)
+    processing_s = t_proc_end - t_proc_start
+    total_s = t_total_end - t_total_start
+    ram_used_mb = ram_after - ram_before
 
-        processing_s = t_proc_end - t_proc_start
-        total_s = t_total_end - t_total_start
-        ram_used_mb = ram_after - ram_before
+    px_per_s_cpu = total_pixels / processing_s if processing_s > 0 else 0.0
+    cpu_efficiency = px_per_s_cpu
 
-        px_per_s_cpu = total_pixels / processing_s if processing_s > 0 else 0.0
-        cpu_efficiency = px_per_s_cpu
+    row = {
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "run_type": RUN_TYPE,
+        "operation": OPERATION_NAME,
+        "image_name": IMG_PATH,
+        "image_width": w,
+        "image_height": h,
+        "total_pixels": total_pixels,
+        "image_bytes": image_bytes,
+        "mask_size": mask_size,
+        "processing_s": round(processing_s, 6),
+        "kernel_s": 0.0,
+        "total_s": round(total_s, 6),
+        "transfer_htod_s": 0.0,
+        "transfer_dtoh_s": 0.0,
+        "ram_before_mb": round(ram_before, 3),
+        "ram_after_mb": round(ram_after, 3),
+        "ram_used_mb": round(ram_used_mb, 3),
+        "vram_total_mb": 0.0,
+        "vram_before_mb": 0.0,
+        "vram_after_mb": 0.0,
+        "vram_used_mb": 0.0,
+        "px_per_s_cpu": round(px_per_s_cpu, 6),
+        "px_per_s_gpu_kernel": 0.0,
+        "cpu_efficiency": round(cpu_efficiency, 6),
+        "gpu_efficiency": 0.0,
+        "speedup_total_cpu_vs_gpu": 0.0,
+        "speedup_kernel_cpu_vs_gpu": 0.0,
+        "device_name_cpu": device_name_cpu,
+        "device_name_gpu": device_name_gpu,
+        "output_path": output_path,
+    }
 
-        row = {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "run_type": RUN_TYPE,
-            "operation": OPERATION_NAME,
-            "image_name": IMG_PATH,
-            "image_width": w,
-            "image_height": h,
-            "total_pixels": total_pixels,
-            "image_bytes": image_bytes,
-            "mask_size": k,
-            "processing_s": round(processing_s, 6),
-            "kernel_s": 0.0,
-            "total_s": round(total_s, 6),
-            "transfer_htod_s": 0.0,
-            "transfer_dtoh_s": 0.0,
-            "ram_before_mb": round(ram_before, 3),
-            "ram_after_mb": round(ram_after, 3),
-            "ram_used_mb": round(ram_used_mb, 3),
-            "vram_total_mb": 0.0,
-            "vram_before_mb": 0.0,
-            "vram_after_mb": 0.0,
-            "vram_used_mb": 0.0,
-            "px_per_s_cpu": round(px_per_s_cpu, 6),
-            "px_per_s_gpu_kernel": 0.0,
-            "cpu_efficiency": round(cpu_efficiency, 6),
-            "gpu_efficiency": 0.0,
-            "speedup_total_cpu_vs_gpu": 0.0,
-            "speedup_kernel_cpu_vs_gpu": 0.0,
-            "device_name_cpu": device_name_cpu,
-            "device_name_gpu": device_name_gpu,
-            "output_path": output_path,
-        }
-
-        append_csv_row(CSV_PATH, row)
+    append_csv_row(CSV_PATH, row)
 
     print("\n========== PROCESO FINALIZADO ==========\n")
 
